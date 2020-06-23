@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Canvas画板</title>
+  <link rel="stylesheet" href="./index.css">
+</head>
+
+<body>
+  <!-- 引入js文件 -->
+  <script src="./index.js"></script>
+
+  <div class="content" id="content">
+    <input type="file" id="img_input" onchange="fileInput(this.files)">
+    <canvas width="600" height="500" id="canvas">
+    </canvas>
+    <div class="point" id="top"></div>
+    <div class="point" id="bottom"></div>
+    <div class="point" id="left"></div>
+    <div class="point" id="right"></div>
+  </div>
+</body>
+
+</html>

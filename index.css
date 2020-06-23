@@ -1,0 +1,57 @@
+* {
+  margin: 0;
+  padding: 0;
+}
+
+.content {
+  position: relative;
+  width: 900px;
+  height: 100vh;
+  margin: 0 auto;
+}
+
+.content .point {
+  position: absolute;
+  width: 4px;
+  height: 4px;
+  background-color: #30336b;
+  top: 100px;
+  left: 150px;
+  display: none;
+}
+
+.content #top {
+  cursor: n-resize;
+}
+
+.content #left {
+  cursor: w-resize;
+}
+
+.content #right {
+  cursor: e-resize;
+}
+
+.content #bottom {
+  cursor: s-resize;
+}
+
+.content input {
+  position: absolute;
+  top: 40px;
+  left: 200px;
+  margin-left: 50px;
+}
+
+.content canvas {
+  border: 1px solid #30336b;
+  margin-top: 100px;
+  margin-left: 150px;
+}
+
+.content canvas .d1 {
+  height: 10px;
+  width: 10px;
+  background-color: red;
+}
+
