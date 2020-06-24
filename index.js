@@ -29,9 +29,47 @@ window.onload = function () {
   canvas.addEventListener("mousemove", mouseMove);
 
   // 创建锚点对象
+  let topLeft = new Point({
+    position: "top_left",
+    top: "0",
+    left: "0",
+    changeSize: (e) => {
+      left.changeSize(e);
+      top.changeSize(e);
+    },
+  });
 
-  // 设置相对位置
-  new Point({
+  let topRight = new Point({
+    position: "top_right",
+    top: "0",
+    left: "100%",
+    changeSize: (e) => {
+      right.changeSize(e);
+      top.changeSize(e);
+    },
+  });
+
+  let bottomleft = new Point({
+    position: "bottom_left",
+    top: "100%",
+    left: "0",
+    changeSize: (e) => {
+      left.changeSize(e);
+      bottom.changeSize(e);
+    },
+  });
+
+  let bottomright = new Point({
+    position: "bottom_right",
+    top: "100%",
+    left: "100%",
+    changeSize: (e) => {
+      right.changeSize(e);
+      bottom.changeSize(e);
+    },
+  });
+
+  let top = new Point({
     position: "top",
     // top: () => baseTop + img_y,
     // left: () => baseLeft + img_x + ctxWidth / 2 - 2,
@@ -44,7 +82,7 @@ window.onload = function () {
     },
   });
 
-  new Point({
+  let right = new Point({
     position: "right",
     // top: () => baseTop + img_y + ctxHeight / 2,
     // left: () => baseLeft + img_x + ctxWidth - 2,
@@ -56,21 +94,20 @@ window.onload = function () {
     },
   });
 
-  // 设置绝对位置
-  new Point({
+  let left = new Point({
     position: "left",
-    top: () => baseTop + img_y + ctxHeight / 2,
-    left: () => baseLeft + img_x,
+    top: "50%",
+    left: "0",
     changeSize: (e) => {
       let changeWidth = img_x - e.offsetX;
       img_x = e.offsetX;
       ctxWidth += changeWidth;
     },
   });
-  new Point({
+  let bottom = new Point({
     position: "bottom",
-    top: () => baseTop + img_y + ctxHeight - 2,
-    left: () => baseLeft + img_x + ctxWidth / 2 - 2,
+    top: "100%",
+    left: "50%",
     changeSize: (e) => {
       let changeHeight = e.offsetY - ctxHeight - img_y;
       ctxHeight += changeHeight;
@@ -157,13 +194,13 @@ class Point {
     if (typeof top === "function") {
       this.topFunc = top;
     } else {
-      this.topStr = this.handleStr(top);
+      this.topStr = Point.handleStr(top);
     }
 
     if (typeof left === "function") {
       this.leftFunc = left;
     } else {
-      this.leftStr = this.handleStr(left);
+      this.leftStr = Point.handleStr(left);
     }
 
     this.changeSize = changeSize;
@@ -189,13 +226,13 @@ class Point {
     if (this.topFunc) {
       top = this.topFunc();
     } else {
-      top = this.topStr * ctxHeight * 0.01 + baseTop + img_y;
+      top = this.topStr * ctxHeight * 0.01 + baseTop + img_y - 1;
     }
 
     if (this.leftFunc) {
       left = this.leftFunc();
     } else {
-      left = this.leftStr * ctxWidth * 0.01 + baseLeft + img_x - 2;
+      left = this.leftStr * ctxWidth * 0.01 + baseLeft + img_x - 1;
     }
 
     this.domObj.style.top = `${top}px`;
@@ -209,7 +246,7 @@ class Point {
   }
 
   // 处理position字符串
-  handleStr(str) {
+  static handleStr(str) {
     if (str === "0") {
       return str;
     } else {

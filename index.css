@@ -20,6 +20,22 @@
   display: none;
 }
 
+.content #top_left {
+  cursor: nw-resize;
+}
+
+.content #top_right {
+  cursor: ne-resize;
+}
+
+.content #bottom_left {
+  cursor: sw-resize;
+}
+
+.content #bottom_right {
+  cursor: se-resize;
+}
+
 .content #top {
   cursor: n-resize;
 }
