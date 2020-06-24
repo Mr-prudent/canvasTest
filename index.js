@@ -1,4 +1,11 @@
-let ctxHeight, ctxWidth, canvasWidth, canvasHeight, mouseX, mouseY, PointDown;
+let ctx,
+  ctxHeight,
+  ctxWidth,
+  canvasWidth,
+  canvasHeight,
+  mouseX,
+  mouseY,
+  PointDown;
 let isDown = false;
 let img_x = 0;
 let img_y = 0;
@@ -10,7 +17,7 @@ let toggleFlag = false;
 window.onload = function () {
   // 获取canvas的dom对象
   let canvas = document.getElementById("canvas");
-  let ctx = canvas.getContext("2d");
+  ctx = canvas.getContext("2d");
 
   // 保存canvas的宽高
   canvasWidth = canvas.width;
@@ -22,25 +29,52 @@ window.onload = function () {
   canvas.addEventListener("mousemove", mouseMove);
 
   // 创建锚点对象
-  let top = new Point({
+
+  // 设置相对位置
+  new Point({
     position: "top",
-    top: () => baseTop + img_y,
-    left: () => baseLeft + img_x + ctxWidth / 2 - 2,
+    // top: () => baseTop + img_y,
+    // left: () => baseLeft + img_x + ctxWidth / 2 - 2,
+    top: "0",
+    left: "50%",
+    changeSize: (e) => {
+      let changeHeight = img_y - e.offsetY;
+      ctxHeight += changeHeight;
+      img_y = e.offsetY;
+    },
   });
-  let right = new Point({
+
+  new Point({
     position: "right",
-    top: () => baseTop + img_y + ctxHeight / 2,
-    left: () => baseLeft + img_x + ctxWidth - 2,
+    // top: () => baseTop + img_y + ctxHeight / 2,
+    // left: () => baseLeft + img_x + ctxWidth - 2,
+    top: "50%",
+    left: "100%",
+    changeSize: (e) => {
+      let changeWidth = e.offsetX - ctxWidth - img_x;
+      ctxWidth += changeWidth;
+    },
   });
-  let left = new Point({
+
+  // 设置绝对位置
+  new Point({
     position: "left",
     top: () => baseTop + img_y + ctxHeight / 2,
     left: () => baseLeft + img_x,
+    changeSize: (e) => {
+      let changeWidth = img_x - e.offsetX;
+      img_x = e.offsetX;
+      ctxWidth += changeWidth;
+    },
   });
-  let bottom = new Point({
+  new Point({
     position: "bottom",
     top: () => baseTop + img_y + ctxHeight - 2,
     left: () => baseLeft + img_x + ctxWidth / 2 - 2,
+    changeSize: (e) => {
+      let changeHeight = e.offsetY - ctxHeight - img_y;
+      ctxHeight += changeHeight;
+    },
   });
 
   // 事件处理函数
@@ -51,27 +85,23 @@ window.onload = function () {
     let x = e.offsetX;
     let y = e.offsetY;
     // 记录鼠标相对于图片的位置
-    mouseX = e.offsetX - img_x;
-    mouseY = e.offsetY - img_y;
+    mouseX = x - img_x;
+    mouseY = y - img_y;
     // 判断是否在图片范围内
-    if (
-      x >= img_x &&
-      x <= img_x + ctxWidth &&
-      y >= img_y &&
-      y <= img_y + ctxHeight
-    ) {
+    if (isInImg(e)) {
       isDown = true;
     }
   }
 
   // 鼠标松开
-  function mouseUp() {
+  function mouseUp(e) {
     // 判断鼠标是否移动
     isDown = false;
     PointDown = "";
-    Point.hideAll();
-    if (!hasMove) {
+    if (!hasMove && isInImg(e)) {
       Point.togglePoint();
+    } else {
+      Point.hideAll();
     }
   }
 
@@ -89,12 +119,10 @@ window.onload = function () {
       return false;
     }
     hasMove = true;
-    // 拖动图片
+    // 拖动图片时修改图片位置
     if (isDown) {
-      Point.hideAll();
       let x = e.offsetX - mouseX;
       let y = e.offsetY - mouseY;
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
       // 判断有无超过边界
       if (y < 0) {
         y = 0;
@@ -108,52 +136,37 @@ window.onload = function () {
       if (y > canvasHeight - ctxHeight) {
         y = canvasHeight - ctxHeight;
       }
-      ctx.drawImage(img, x, y, ctxWidth, ctxHeight);
       img_x = x;
       img_y = y;
-    }
-
-    const { offsetX, offsetY } = e;
-    let changeWidth, changeHeight;
-    // 处理锚点拖动，改变图片大小
-    if (PointDown === "top") {
-      changeHeight = img_y - offsetY;
-      ctxHeight += changeHeight;
-      img_y = offsetY;
-      top.show("single");
-    } else if (PointDown === "right") {
-      changeWidth = offsetX - ctxWidth - img_x;
-      ctxWidth += changeWidth;
-      right.show("single");
-    } else if (PointDown === "left") {
-      changeWidth = img_x - offsetX;
-      img_x = offsetX;
-      ctxWidth += changeWidth;
-      left.show("single");
-    } else if (PointDown === "bottom") {
-      changeHeight = offsetY - ctxHeight - img_y;
-      ctxHeight += changeHeight;
-      bottom.show("single");
-    }
-    if (PointDown) {
       drawImg();
     }
-  }
 
-  function drawImg() {
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    ctx.drawImage(img, img_x, img_y, ctxWidth, ctxHeight);
+    // 拖动锚点时计算图片大小，并绘制
+    if (PointDown) {
+      Point.changeSize(e);
+      drawImg();
+    }
   }
 };
 
 // Point锚点对象
 class Point {
   static pointArr = [];
-  constructor({ position, top, left } = option) {
+  constructor({ position, top, left, changeSize } = option) {
     // 保存计算位置的函数
-    this.topFunc = top;
-    this.leftFunc = left;
+    if (typeof top === "function") {
+      this.topFunc = top;
+    } else {
+      this.topStr = this.handleStr(top);
+    }
 
+    if (typeof left === "function") {
+      this.leftFunc = left;
+    } else {
+      this.leftStr = this.handleStr(left);
+    }
+
+    this.changeSize = changeSize;
     // 保存到类中
     Point.pointArr.push(this);
 
@@ -168,12 +181,23 @@ class Point {
 
   // 显示锚点
   show(option) {
+    let top, left;
     if (option === "single") {
       Point.hideAll();
     }
 
-    let top = this.topFunc();
-    let left = this.leftFunc();
+    if (this.topFunc) {
+      top = this.topFunc();
+    } else {
+      top = this.topStr * ctxHeight * 0.01 + baseTop + img_y;
+    }
+
+    if (this.leftFunc) {
+      left = this.leftFunc();
+    } else {
+      left = this.leftStr * ctxWidth * 0.01 + baseLeft + img_x - 2;
+    }
+
     this.domObj.style.top = `${top}px`;
     this.domObj.style.left = `${left}px`;
     this.domObj.style.display = "block";
@@ -184,15 +208,40 @@ class Point {
     this.domObj.style.display = "none";
   }
 
+  // 处理position字符串
+  handleStr(str) {
+    if (str === "0") {
+      return str;
+    } else {
+      return str.slice(0, -1);
+    }
+  }
+
   // 显示所有锚点
   static showAll() {
     toggleFlag = true;
     this.pointArr.forEach((item) => {
       item.show();
     });
-
   }
 
+  // 显示被选中时的锚点
+  static showSingle() {
+    this.pointArr.forEach((item) => {
+      if (item.position === PointDown) {
+        item.show("single");
+      }
+    });
+  }
+
+  // 根据锚点位置修改图片大小
+  static changeSize(e) {
+    this.pointArr.forEach((item) => {
+      if (item.position === PointDown) {
+        item.changeSize(e);
+      }
+    });
+  }
   //隐藏所有锚点
   static hideAll() {
     toggleFlag = false;
@@ -228,7 +277,6 @@ function fileInput(files) {
     img = new Image();
     // 读取图片路劲
     img.src = e.target.result;
-    let ctx = canvas.getContext("2d");
     img.onload = function () {
       // 设置缩放比例
       let scale = 1;
@@ -244,14 +292,36 @@ function fileInput(files) {
 
       ctxHeight = scale * this.height;
       ctxWidth = scale * this.width;
-      // 清除画布
-      ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-      // 显示图片
-      ctx.drawImage(img, 0, 0, ctxWidth, ctxHeight);
       // 重新选择图片时对img_x, img_y清零
       img_x = 0;
       img_y = 0;
+      drawImg();
     };
   };
   reader.readAsDataURL(files[0]);
+}
+
+// canvas绘画
+function drawImg() {
+  if (hasMove) {
+    Point.hideAll();
+  }
+  Point.showSingle();
+  ctx.clearRect(0, 0, canvasWidth, canvasHeight);
+  ctx.drawImage(img, img_x, img_y, ctxWidth, ctxHeight);
+}
+
+function isInImg(e) {
+  let x = e.offsetX;
+  let y = e.offsetY;
+  if (
+    x >= img_x &&
+    x <= img_x + ctxWidth &&
+    y >= img_y &&
+    y <= img_y + ctxHeight
+  ) {
+    return true;
+  } else {
+    return false;
+  }
 }
