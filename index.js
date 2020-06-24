@@ -10,9 +10,11 @@ let toggleFlag = false;
 window.onload = function () {
   // 获取canvas的dom对象
   let canvas = document.getElementById("canvas");
+  let ctx = canvas.getContext("2d");
+
+  // 保存canvas的宽高
   canvasWidth = canvas.width;
   canvasHeight = canvas.height;
-  let ctx = canvas.getContext("2d");
 
   // 为canvas对象绑定事件
   canvas.addEventListener("mousedown", mouseDown);
@@ -20,10 +22,26 @@ window.onload = function () {
   canvas.addEventListener("mousemove", mouseMove);
 
   // 创建锚点对象
-  let top = new Point("top");
-  let right = new Point("right");
-  let left = new Point("left");
-  let bottom = new Point("bottom");
+  let top = new Point({
+    position: "top",
+    top: () => baseTop + img_y,
+    left: () => baseLeft + img_x + ctxWidth / 2 - 2,
+  });
+  let right = new Point({
+    position: "right",
+    top: () => baseTop + img_y + ctxHeight / 2,
+    left: () => baseLeft + img_x + ctxWidth - 2,
+  });
+  let left = new Point({
+    position: "left",
+    top: () => baseTop + img_y + ctxHeight / 2,
+    left: () => baseLeft + img_x,
+  });
+  let bottom = new Point({
+    position: "bottom",
+    top: () => baseTop + img_y + ctxHeight - 2,
+    left: () => baseLeft + img_x + ctxWidth / 2 - 2,
+  });
 
   // 事件处理函数
 
@@ -96,37 +114,28 @@ window.onload = function () {
     }
 
     const { offsetX, offsetY } = e;
-    let style_top, style_left, changeWidth, changeHeight;
+    let changeWidth, changeHeight;
     // 处理锚点拖动，改变图片大小
     if (PointDown === "top") {
       changeHeight = img_y - offsetY;
       ctxHeight += changeHeight;
       img_y = offsetY;
-      style_top = baseTop + img_y;
-      style_left = baseLeft + img_x + ctxWidth / 2 - 2;
-      top.showSingle(style_top, style_left);
-      drawImg();
+      top.show("single");
     } else if (PointDown === "right") {
       changeWidth = offsetX - ctxWidth - img_x;
       ctxWidth += changeWidth;
-      style_top = baseTop + img_y + ctxHeight / 2;
-      style_left = baseLeft + img_x + ctxWidth - 2;
-      right.showSingle(style_top, style_left);
-      drawImg();
+      right.show("single");
     } else if (PointDown === "left") {
       changeWidth = img_x - offsetX;
       img_x = offsetX;
       ctxWidth += changeWidth;
-      style_top =  baseTop + img_y + ctxHeight / 2;
-      style_left = baseLeft + img_x;
-      left.showSingle(style_top, style_left);
-      drawImg();
+      left.show("single");
     } else if (PointDown === "bottom") {
       changeHeight = offsetY - ctxHeight - img_y;
       ctxHeight += changeHeight;
-      style_top = baseTop + img_y + ctxHeight - 2;
-      style_left = baseLeft + img_x + ctxWidth / 2 - 2;
-      bottom.showSingle(style_top, style_left);
+      bottom.show("single");
+    }
+    if (PointDown) {
       drawImg();
     }
   }
@@ -140,8 +149,14 @@ window.onload = function () {
 // Point锚点对象
 class Point {
   static pointArr = [];
-  constructor(position) {
+  constructor({ position, top, left } = option) {
+    // 保存计算位置的函数
+    this.topFunc = top;
+    this.leftFunc = left;
+
+    // 保存到类中
     Point.pointArr.push(this);
+
     // 获取锚点的dom对象
     this.domObj = document.getElementById(position);
     this.position = position;
@@ -151,63 +166,34 @@ class Point {
     this.domObj.addEventListener("mouseup", Point.pointMouseUp);
   }
 
-  // 设置位置并画图
-  drawImg(ctx) {
-    ctx.clearRect(0, 0, canvasWidth, canvasHeight);
-    ctx.drawImage(img, img_x, img_y, ctxWidth, ctxHeight);
-  }
+  // 显示锚点
+  show(option) {
+    if (option === "single") {
+      Point.hideAll();
+    }
 
-  showSingle(top, left) {
-    Point.hideAll();
+    let top = this.topFunc();
+    let left = this.leftFunc();
     this.domObj.style.top = `${top}px`;
     this.domObj.style.left = `${left}px`;
-    this.domObj.style.display = 'block';
+    this.domObj.style.display = "block";
   }
 
+  // 隐藏锚点
   hide() {
-    this.domObj.style.display = 'none';
+    this.domObj.style.display = "none";
   }
 
-  // 显示点击后初始的锚点
-  static showAll() { 
+  // 显示所有锚点
+  static showAll() {
     toggleFlag = true;
-  
-    // 获取锚点的dom对象
-    let top = document.getElementById("top");
-    let left = document.getElementById("left");
-    let bottom = document.getElementById("bottom");
-    let right = document.getElementById("right");
-    // 根据图片位置设置锚点坐标
+    this.pointArr.forEach((item) => {
+      item.show();
+    });
 
-    // top锚点
-    let top_style_left = baseLeft + img_x + ctxWidth / 2 - 2;
-    let top_style_top = baseTop + img_y;
-    top.style.left = `${top_style_left}px`;
-    top.style.top = `${top_style_top}px`;
-
-    // left锚点
-    let left_style_left = baseLeft + img_x;
-    let left_style_top = baseTop + img_y + ctxHeight / 2;
-    left.style.left = `${left_style_left}px`;
-    left.style.top = `${left_style_top}px`;
-
-    // bottom锚点
-    let bottom_style_left = baseLeft + img_x + ctxWidth / 2 - 2;
-    let bottom_style_top = baseTop + img_y + ctxHeight - 2;
-    bottom.style.left = `${bottom_style_left}px`;
-    bottom.style.top = `${bottom_style_top}px`;
-
-    // right锚点
-    let right_style_left = baseLeft + img_x + ctxWidth - 2;
-    let right_style_top = baseTop + img_y + ctxHeight / 2;
-    right.style.left = `${right_style_left}px`;
-    right.style.top = `${right_style_top}px`;
-    let point = document.getElementsByClassName("point");
-    for (let i = 0; i < point.length; i++) {
-      point[i].style.display = "block";
-    }
   }
-  //隐藏锚点
+
+  //隐藏所有锚点
   static hideAll() {
     toggleFlag = false;
     this.pointArr.forEach((item) => {
@@ -224,7 +210,7 @@ class Point {
     }
   }
 
-  // 锚点点击事件绑定
+  // 锚点点击事件处理
   static pointMouseDown(e) {
     PointDown = e.target.getAttribute("id");
   }
